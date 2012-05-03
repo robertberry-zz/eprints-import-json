@@ -91,10 +91,8 @@ sub input_fh {
 
 =head2 convert_input
 
-Removes unwanted information from the JSON document and reports warnings.
-
-todo: add more validation. validate that fields with 'multiple' set on
-      metafield are indeed lists, not scalars.
+Strips any fields that do not belong in EPrints from the JSON document and
+produces warnings.
 
 =cut
 
@@ -106,7 +104,7 @@ sub convert_input {
 
     for my $field (keys %$print) {
         unless ($dataset->has_field($field)) {
-            $self->warning("Unrecognized field in document: '{$field}'.");
+            $self->warning("Unrecognized field in document: '$field'.");
             next;
         }
 
