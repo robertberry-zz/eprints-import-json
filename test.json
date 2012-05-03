@@ -1,0 +1,9 @@
+[
+    {
+        "type": "book",
+        "refereed": "FALSE",
+        "ispublished": "pub",
+        "title": "My JSON test EPrint",
+        "official_url": ""
+    }
+]

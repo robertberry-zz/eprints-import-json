@@ -1,5 +1,19 @@
 package EPrints::Plugin::Import::JSON;
 
+=head1 NAME
+
+EPrints::Plugin::Import::JSON - JSON Import Plugin
+
+=head1 VERSION
+
+Version 0.1
+
+=head1 SYNOPSIS
+
+Import JSON documents into EPrints. Assumes a hash with appropriate key-value pairs.
+
+=cut
+
 use EPrints::Plugin::Import::TextFile;
 use strict;
 use warnings;
@@ -15,9 +29,9 @@ sub new {
 
     my $self = $class->SUPER::new(%params);
 
-    my $self->{name} = "JSON";
-    my $self->{visible} = "all";
-    my $self->{produce} = ["list/eprint"];
+    $self->{name} = "JSON";
+    $self->{visible} = "all";
+    $self->{produce} = ["list/eprint"];
 
     my $rc = EPrints::Utils::require_if_exists('JSON');
 
@@ -25,27 +39,48 @@ sub new {
         $self->{visible} = '';
         $self->{error} = "Failed to load required module JSON.";
     }
+
+    return $self;
 }
 
+=head1 METHODS
+
+=head2 input_fh
+
+Given a filehandle, opens it, reads the JSON document, imports the given array
+of EPrints, then returns an EPrints::List of the imported documents.
+
+=cut
+
 sub input_fh {
-    my ($self, %opts) = @_
+    my ($self, %opts) = @_;
 
     my ($json, $prints, @ids);
 
-    $json = <$opts{fh}>;
-    $prints = decode_json $json;
+    {
+        # Read entire file into string
+        my $fh = $opts{fh};
+        local $/ = undef;
+        $json = <$fh>;
+    }
+
+    try {
+        $prints = decode_json($json);
+    } catch ($error) {
+        $self->error("Malformed JSON, could not import.");
+    }
 
     for my $print (@{$prints}) {
+        my $epdata;
         try {
-            my $epdata = $self->convert_input($print);
+            $epdata = $self->convert_input($print);
         } catch ($err) {
             # ignore errors for now (maybe add some logging)
             next;
         }
-
         my $dataobj = $self->epdata_to_dataobj($opts{dataset}, $epdata);
         if (defined $dataobj) {
-            push @ids, $dataobj->get_id;
+            push @ids, $dataobj->get_id();
         }
     }
 
@@ -54,7 +89,7 @@ sub input_fh {
                               ids => \@ids);
 }
 
-=method convert_input
+=head2 convert_input
 
 Removes unwanted information from the JSON document and reports warnings.
 
@@ -67,16 +102,46 @@ sub convert_input {
     my ($self, $print) = @_;
 
     my %clean;
-    my $dataset = $plugin->{session}->get_dataset('archive');
+    my $dataset = $self->{session}->get_dataset('archive');
 
-    for my $field (keys %{$print}) {
+    for my $field (keys %$print) {
         unless ($dataset->has_field($field)) {
             $self->warning("Unrecognized field in document: '{$field}'.");
             next;
         }
 
-        $clean{$field} = $print->{field};
+        $clean{$field} = $print->{$field};
     }
 
     return \%clean;
 }
+
+=head1 AUTHOR
+
+Robert J. Berry <robert.berry@liverpool.ac.uk>
+
+=cut
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (c) 2012 The University of Liverpool
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+=cut
