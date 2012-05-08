@@ -114,6 +114,8 @@ sub convert_input {
     return \%clean;
 }
 
+1;
+
 =head1 AUTHOR
 
 Robert J. Berry <robert.berry@liverpool.ac.uk>
@@ -138,3 +140,4 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =cut
+
