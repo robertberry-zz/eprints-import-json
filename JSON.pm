@@ -67,7 +67,7 @@ sub input_fh {
     try {
         $prints = decode_json($json);
     } catch ($error) {
-        $self->error("Malformed JSON, could not import.");
+        $self->error("Malformed JSON, could not import: $error");
     }
 
     for my $print (@{$prints}) {
